@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>λ Engine: V7</title>
+    <meta content='width=device-width, initial-scale=1.0, interactive-widget=resizes-content' name='viewport'/>
+    <style>
+        :root { --hl: #f2ad0d; --bg: #121212; --panel: #1e1e1e; --cyan: #00ccff; --success: #00ff00; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', 'Consolas', monospace; margin: 0; padding: 20px; line-height: 1.5; }
+        
+        .controls { background: #000; padding: 15px; border-bottom: 2px solid var(--hl); margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .btn { background: #333; color: white; border: 1px solid #444; padding: 6px 15px; cursor: pointer; font-size: 0.9em; transition: 0.2s; }
+        .btn.active { background: var(--hl); color: black; font-weight: bold; border-color: var(--hl); }
+
+        .path-bar { font-size: 1em; margin-bottom: 20px; background: var(--panel); padding: 12px; border-radius: 4px; display: flex; align-items: center; border: 1px solid #333; }
+        .path-bar a { color: var(--hl); text-decoration: none; font-weight: bold; }
+        .path-sep { color: #555; margin: 0 8px; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+        .card { background: var(--panel); padding: 15px; border-radius: 6px; text-decoration: none; color: inherit; display: flex; align-items: center; border: 1px solid #333; transition: 0.1s; cursor: pointer; }
+        .card:hover { border-color: var(--hl); background: #252525; }
+        
+        .icon { font-size: 2em; margin-right: 15px; min-width: 40px; text-align: center; }
+        .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .sub { font-size: 0.75em; color: #777; text-transform: uppercase; margin-top: 3px; }
+
+        /* User Requested File Viewer */
+        .file-viewer { background: #000; border: 1px solid #333; padding: 25px; border-radius: 8px; width: 100%; box-sizing: border-box; }
+        .file-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; }
+        .file-actions { display: flex; gap: 10px; }
+        pre { background: #0a0a0a; padding: 15px; overflow: auto; border-radius: 4px; color: #ccc; font-size: 0.9em; max-height: 500px; border: 1px solid #1a1a1a; white-space: pre-wrap; word-break: break-all; }
+
+        .terminal { background: #050505; border: 1px solid #222; padding: 10px 15px; font-size: 0.8em; margin-bottom: 15px; color: #888; border-left: 4px solid #444; max-height: 120px; overflow-y: auto; }
+        .success { color: var(--success); }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button class="btn" id="m-path" onclick="setMode('path')">PATH (B)</button>
+        <button class="btn" id="m-key" onclick="setMode('key')">KEY (A)</button>
+        <button class="btn" id="m-pointer" onclick="setMode('pointer')">POINTER (C)</button>
+    </div>
+
+    <div class="terminal" id="term-log">Booting λ-Core...</div>
+    <div class="path-bar" id="pathDisplay">Root</div>
+    <div id="viewPort" class="grid"></div>
+
+    <script>
+        const BASE_URL = "https://jp-aluno.github.io/test2/"; 
+        let DB = { basic: null, advancedCache: null, icons: {} };
+        let MODE = new URLSearchParams(window.location.search).get('mode') || 'path';
+
+        function log(msg) { 
+            const l = document.getElementById('term-log');
+            l.innerHTML += `<div>${msg}</div>`;
+            l.scrollTop = l.scrollHeight;
+        }
+
+        async function boot() {
+            document.getElementById(`m-${MODE}`).classList.add('active');
+            try {
+                const bRes = await fetch(BASE_URL + "basic.json").then(r => r.json());
+                DB.basic = bRes;
+                log(`<span class="success">✔ System ready. Mode: ${MODE.toUpperCase()}</span>`);
+            } catch(e) { log(`<span style="color:red">✖ Boot failed.</span>`); }
+            window.onhashchange = router;
+            router();
+        }
+
+        function setMode(m) {
+            const u = new URL(window.location);
+            u.searchParams.set('mode', m);
+            window.location.href = u.href;
+        }
+
+        // Helper to handle both Array and Object children
+        function getChildren(node) {
+            if (!node) return null;
+            const c = node.children || node.Children || node.basic?.children;
+            if (!c) return null;
+            return Array.isArray(c) ? c : [c];
+        }
+
+        // Deep Search for Key Mode
+        function findPathToTarget(node, targetName, currentPath = "") {
+            const name = node.name || node.Name;
+            const newPath = currentPath ? `${currentPath}/${name}` : name;
+            if (name === targetName) return newPath;
+            const kids = getChildren(node);
+            if (kids) {
+                for (let k of kids) {
+                    const found = findPathToTarget(k, targetName, newPath);
+                    if (found) return found;
+                }
+            }
+            return null;
+        }
+
+        async function resolveTarget(hash) {
+            if (!hash) return { node: DB.basic.basic, path: "" };
+            
+            let pathString = hash;
+
+            // KEY MODE RESOLUTION
+            if (MODE === 'key') {
+                const entry = DB.basic.advanced?.find(x => x.id === hash);
+                if (entry) {
+                    log(`[KEY] Resolved <b>${hash}</b> to target: ${entry.target}`);
+                    pathString = entry.parent ? `${entry.parent}/${entry.target}` : findPathToTarget(DB.basic.basic, entry.target);
+                    if (!pathString) { log(`✖ Auto-resolution failed for key: ${hash}`); return null; }
+                }
+            }
+
+            const segments = pathString.split('/').filter(x => x && x !== 'children' && x !== 'Children');
+            let current = DB.basic.basic;
+            let pathTrace = "";
+
+            for (let i = 0; i < segments.length; i++) {
+                let seg = segments[i];
+                let list = getChildren(current);
+                if (!list) return null;
+
+                let found = (MODE === 'pointer' && !isNaN(seg)) ? list[parseInt(seg)] : list.find(item => (item.name || item.Name) === seg);
+                if (!found) return null;
+                
+                current = found;
+                pathTrace += (pathTrace ? "/" : "") + seg;
+
+                if (seg.toLowerCase().endsWith('.pak')) {
+                    log(`[TUNNEL] Entering PAK <b>(${seg})</b> | Mode: <b>${MODE}</b> | Full Path: <b>${pathTrace}</b> archive...`);
+                    const contents = await fetchPakContents(pathTrace);
+                    if (contents) current = contents;
+                }
+            }
+            return { node: current, path: pathTrace };
+        }
+
+        async function fetchPakContents(path) {
+            const fileName = path.split('/').pop();
+            try {
+                const pRes = await fetch(`${BASE_URL}${path}/index.json`);
+                if (pRes.ok) return await pRes.json();
+            } catch(e) {}
+            if (!DB.advancedCache) DB.advancedCache = await fetch(BASE_URL + "advanced.json").then(r => r.json());
+            
+            // Check if advanced.json has this PAK as a top-level ID (matching your basic.json logic)
+            if (DB.advancedCache[fileName]) return DB.advancedCache[fileName];
+            
+            // Fallback to recursive search
+            return path.split('/').reduce((prev, curr) => {
+                const list = getChildren(prev);
+                return list ? list.find(k => (k.name || k.Name) === curr) : null;
+            }, DB.advancedCache);
+        }
+
+        async function router() {
+            const hash = decodeURIComponent(location.hash.substring(1));
+            const view = document.getElementById('viewPort');
+            view.innerHTML = "Navigating...";
+
+            const result = await resolveTarget(hash);
+            if (!result) {
+                view.innerHTML = `<div style="padding:20px; color:red">Target not found: ${hash}</div>`;
+                return;
+            }
+
+            const { node, path } = result;
+            
+            // Breadcrumb update
+            const cb = document.getElementById('pathDisplay');
+            cb.innerHTML = `<a href="#">Root</a>`;
+            path.split('/').forEach((s, i, a) => {
+            //    cb.innerHTML += `<span class="path-sep">/</span><a href="#${a.slice(0,i+1).join('/')}">${s}</a>`;
+            const depth = i + 1;
+            const sup = `<sup>${depth}</sup>`;
+        
+            cb.innerHTML += `<span class="path-sep">/</span>
+                             <a href="#${a.slice(0, i + 1).join('/')}">${s}${sup}</a>`;      
+            });
+            
+            const kids = getChildren(node);
+            if (kids && kids.length > 0 && !node.Content) renderGrid(kids, path);
+            else renderFileView(node);
+        }
+
+        function renderGrid(items, currentPath) {
+            const view = document.getElementById('viewPort');
+            view.className = "grid";
+            view.innerHTML = "";
+            items.forEach((item, idx) => {
+                const name = item.name || item.Name;
+                const type = (item.type || item.Type || "file").toLowerCase();
+                let icon = name.toLowerCase().endsWith('.pak') ? "📦" : (type === "directory" ? "📁" : "📄");
+                
+                let link = currentPath ? `${currentPath}/${name}` : name;
+                if (MODE === 'pointer') link = currentPath ? `${currentPath}/children/${idx}` : `children/${idx}`;
+                if (MODE === 'key') {
+                    const adv = DB.basic.advanced?.find(x => x.target === name);
+                    if (adv) link = adv.id;
+                }
+
+                const card = document.createElement('a');
+                card.className = "card";
+                card.href = `#${link}`;
+                if (item.description) card.title = item.description;
+                card.innerHTML = `<span class="icon">${icon}</span><div><span class="name">${name}</span><span class="sub">${type}</span></div>`;
+                view.appendChild(card);
+            });
+        }
+
+        function renderFileView(file) {
+            const view = document.getElementById('viewPort');
+            view.className = ""; // Remove grid for standard layout
+            const fileName = file.name || file.Name;
+            const content = file.content || file.Content || JSON.stringify(file, null, 2);
+            document.title = `${fileName}`;
+            
+            view.innerHTML = `
+                <div class="file-viewer">
+                    <div style="display:none">
+                        <p>Technical specifications and raw data for ${fileName}. 
+                        This file is part of the SLUS_200.66 archive (Half-Life PS2).</p>
+                    </div>
+        
+                    <div class="file-header">
+                        <div>
+                            <h2 style="margin:0; color:var(--hl)">${fileName}</h2>
+                            <div class="sub">Asset Leaf Node | SLUS_200.66</div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn" onclick="googleIt()">Google it</button>
+                            <button class="btn" onclick="viewRaw()">View Raw</button>
+                            <button class="btn active" onclick="downloadFile('${fileName}', \`${content.replace(/`/g, '\\`')}\`)">Download</button>
+                        </div>
+                    </div>
+                    <pre id="fileContent">${content}</pre>
+                </div>`;
+        }
+        
+        window.googleIt = () => {
+            const fileName = document.querySelector('.file-viewer h2').innerText;
+            const context = "SLUS_200.66";
+            const query = encodeURIComponent(`${context} ${fileName}`);
+            window.open(`https://www.google.com/search?q=${query}`, "_blank");
+        };
+        
+        window.viewRaw = () => {
+            const win = window.open("", "_blank");
+            win.document.write(`<pre style="background:#111; color:#eee; padding:20px;">${document.getElementById('fileContent').innerText}</pre>`);
+        };
+
+        window.downloadFile = (name, data) => {
+            const blob = new Blob([data], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+        };
+
+        boot();
+    </script>
+</body>
+</html>
+
+
+
