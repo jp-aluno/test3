@@ -6,10 +6,24 @@
       "extensions": [
         {
           "extension": ".wav",
-          "description": "Uncompressed audio files used for character dialogue and environmental sound effects."
+          "platform": "All",
+          "description": "Standard uncompressed audio files, typically supporting stereo for music and ambiance."
+        },
+        {
+          "extension": ".wav",
+          "platform": "PS2",
+          "parameters": { "codec": "PCM_S16LE", "sample_rate": 44100, "channels": 1, "endianness": "little" },
+          "description": "Uncompressed mono audio files used for character dialogue and environmental effects on PS2."
+        },
+        {
+          "extension": ".wav",
+          "platform": "PC",
+          "description": "Standard uncompressed audio files, typically supporting stereo for music and ambiance."
         },
         {
           "extension": ".vag",
+          "platform": "PS2",
+          "parameters": { "codec": "ADPCM_PSX", "sample_rate": 44100, "block_align": 16, "interleave": 0, "header": "VAGp" },
           "description": "Compressed audio format typically used for PlayStation 2 specific sound data."
         }
       ]
@@ -19,8 +33,19 @@
       "icon": "👾",
       "extensions": [
         {
+          "extension": ".smd",
+          "platform": "All",
+          "description": "Standard 3D model files containing mesh and skeleton data (Source: smd)."
+        },
+        {
           "extension": ".dol",
+          "platform": "PS2",
           "description": "3D geometry and animation data for characters, NPCs, and physics objects."
+        },
+        {
+          "extension": ".mdl",
+          "platform": "PC",
+          "description": "Standard 3D model files containing mesh and skeleton data (Source: smd)."
         }
       ]
     },
@@ -30,6 +55,7 @@
       "extensions": [
         {
           "extension": ".nod",
+          "platform": "PS2",
           "description": "AI pathfinding nodes that tell NPCs where they can move within a level."
         }
       ]
@@ -39,8 +65,24 @@
       "icon": "🧱",
       "extensions": [
         {
+          "extension": ".map",
+          "platform": "All",
+          "description": "Uncompiled map source files used in level editors."
+        },
+        {
           "extension": ".bs2",
+          "platform": "PS2",
           "description": "Compiled map and geometry data defining the physical structure of game levels."
+        },
+        {
+          "extension": ".bsp",
+          "platform": "PC",
+          "description": "Compiled map and geometry data defining the physical structure of game levels."
+        },
+        {
+          "extension": ".rmf",
+          "platform": "PC",
+          "description": "Rich Map Format; editor-specific map source for PC."
         }
       ]
     },
@@ -50,17 +92,34 @@
       "extensions": [
         {
           "extension": ".psi",
+          "platform": "PS2",
           "description": "User interface graphics, such as menus, buttons, and sliders."
         }
       ]
     },
     {
-      "category": "Sprite",
-      "icon": "✨",
+      "category": "Image",
+      "icon": "🖼️",
       "extensions": [
         {
-          "extension": ".spz",
-          "description": "2D animated sprites used for HUD icons, glows, or muzzle flashes."
+          "extension": ".png",
+          "platform": "All",
+          "description": "Targa graphic files used for high-fidelity textures."
+        },
+        {
+          "extension": ".tga",
+          "platform": "PC",
+          "description": "Targa graphic files used for high-fidelity textures."
+        },
+        {
+          "extension": ".bmp",
+          "platform": "PC",
+          "description": "Standard bitmap image files used for static graphics or textures."
+        },
+        {
+          "extension": ".ico",
+          "platform": "PC",
+          "description": "Small graphic files used for menu icons and save-game indicators."
         }
       ]
     },
@@ -70,99 +129,8 @@
       "extensions": [
         {
           "extension": ".PAK",
+          "platform": "All",
           "description": "A package file that bundles multiple game assets into a single storage file."
-        }
-      ]
-    },
-    {
-      "category": "Data",
-      "icon": "📄",
-      "extensions": [
-        {
-          "extension": ".hl1",
-          "description": "Game-specific data files for level logic and localized text strings."
-        }
-      ]
-    },
-    {
-      "category": "Image",
-      "icon": "🖼️",
-      "extensions": [
-        {
-          "extension": ".ico",
-          "description": "Small graphic files used for menu icons and save-game indicators."
-        },
-        {
-          "extension": ".bmp",
-          "description": "Standard bitmap image files used for static graphics or textures."
-        },
-        {
-          "extension": ".lmp",
-          "description": "Lump files, usually containing raw bitmap data for menu backgrounds."
-        }
-      ]
-    },
-    {
-      "category": "System",
-      "icon": "⚙️",
-      "extensions": [
-        {
-          "extension": ".sys",
-          "description": "System metadata files, often describing contents of save folders."
-        },
-        {
-          "extension": ".psf",
-          "description": "Likely font data or system settings for platform-specific rendering."
-        }
-      ]
-    },
-    {
-      "category": "Text",
-      "icon": "📝",
-      "extensions": [
-        {
-          "extension": ".txt",
-          "description": "Plain text files containing credits, level titles, and chapter lists."
-        }
-      ]
-    },
-    {
-      "category": "Config",
-      "icon": "🛠️",
-      "extensions": [
-        {
-          "extension": ".cfg",
-          "description": "Script files that set console variables, game difficulty, and controls."
-        }
-      ]
-    },
-    {
-      "category": "Script",
-      "icon": "📜",
-      "extensions": [
-        {
-          "extension": ".rc",
-          "description": "Resource script files used to initialize engine parameters at startup."
-        }
-      ]
-    },
-    {
-      "category": "Cache",
-      "icon": "⚡",
-      "extensions": [
-        {
-          "extension": ".epc",
-          "description": "Precache data used to load assets into memory before they are displayed."
-        }
-      ]
-    },
-    {
-      "category": "Texture",
-      "icon": "🎨",
-      "extensions": [
-        {
-          "extension": "{ (Prefix)",
-          "description": "Used for surface decals like blood, scorch marks, and bullet holes."
         }
       ]
     }
