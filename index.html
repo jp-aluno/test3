@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>λ Engine: V7</title>
+    <title>λ Engine: V10</title>
     <meta content='width=device-width, initial-scale=1.0, interactive-widget=resizes-content' name='viewport'/>
+    <link href='icon.ico' rel='icon' type='image/x-icon'/>
+    <link href='icon.png' rel='icon' sizes='32x32'/>	
+    
     <style>
         :root { --hl: #f2ad0d; --bg: #121212; --panel: #1e1e1e; --cyan: #00ccff; --success: #00ff00; }
         body { background: var(--bg); color: #e0e0e0; font-family: 'Segoe UI', 'Consolas', monospace; margin: 0; padding: 20px; line-height: 1.5; }
@@ -47,7 +50,7 @@
     <div id="viewPort" class="grid"></div>
 
     <script>
-        const BASE_URL = "https://jp-aluno.github.io/test2/"; 
+        const BASE_URL = "https://jp-aluno.github.io/test3/"; 
         let DB = { basic: null, advancedCache: null, icons: {} };
         let MODE = new URLSearchParams(window.location.search).get('mode') || 'path';
 
@@ -260,6 +263,7 @@
     </script>
 </body>
 </html>
+
 
 
 
